@@ -21,7 +21,7 @@ async function run() {
   try {
     const serviceCollection = client.db("tutorPro").collection("services");
     const reviewCollection = client.db("tutorPro").collection("reviews");
-    // get all data
+    // get all data get
     app.get("/services", async (req, res) => {
       const query = {};
       const cursor = serviceCollection.find(query);
@@ -34,6 +34,19 @@ async function run() {
       const cursor = serviceCollection.find(query);
       const services = await cursor.limit(3).toArray();
       res.send(services);
+    });
+    // for review data get
+    app.get("/MyReviews", async (req, res) => {
+      let query = {};
+      if (req.query.email) {
+        query = {
+          email: req.query.email,
+        };
+      }
+      const cursor = reviewCollection.find(query);
+      const reviews = await cursor.toArray();
+      console.log(reviews);
+      res.send(reviews);
     });
 
     app.get("/reviews", async (req, res) => {

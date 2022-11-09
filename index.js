@@ -1,6 +1,7 @@
 const express = require("express");
 const { MongoClient, ServerApiVersion, ObjectId } = require("mongodb");
 const cors = require("cors");
+const { query } = require("express");
 // const jwt = require("jsonwebtoken");
 const app = express();
 const port = process.env.PORT || 5000;
@@ -45,7 +46,6 @@ async function run() {
       }
       const cursor = reviewCollection.find(query);
       const reviews = await cursor.toArray();
-      console.log(reviews);
       res.send(reviews);
     });
 
@@ -70,6 +70,13 @@ async function run() {
       const result = await reviewCollection.insertOne(review);
       res.send(result);
     });
+
+    app.post("/service", async (req, res) => {
+      const service = req.body;
+      const result = await serviceCollection.insertOne(service);
+      res.send(result);
+    });
+
   } finally {
   }
 }

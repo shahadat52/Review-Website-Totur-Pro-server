@@ -23,32 +23,31 @@ async function run() {
     const serviceCollection = client.db("tutorPro").collection("services");
     const reviewCollection = client.db("tutorPro").collection("reviews");
 
-    function verifyJWT (req, res, next){
+    function verifyJWT(req, res, next) {
       const authHeader = req.headers.authorization;
       if (!authHeader) {
-        return res
-          .status(401)
-          .send({ message: "unauthorized access " });
+        return res.status(401).send({ message: "unauthorized access " });
       }
       const token = authHeader.split(" ")[1];
-      jwt.verify(token, process.env.DB_TOKEN_SECRET, function(err, decoded){
-        if (err) {
-          return res.status(403).send({ message: "forbidden access" });
+      jwt.verify(
+        token,
+        process.env.ACCESS_TOKEN_SECRET,
+        function (err, decoded) {
+          if (err) {
+            return res.status(403).send({ message: "Forbidden access" });
+          }
+          req.decoded = decoded;
+          next();
         }
-        req.decoded = decoded
-        next()
-      })
-    
+      );
     }
-
 
     // For get token
     app.post("/jwt", (req, res) => {
       const user = req.body;
-      const token = jwt.sign(user, process.env.DB_TOKEN_SECRET, {
-        expiresIn: "1d",
+      const token = jwt.sign(user, process.env.ACCESS_TOKEN_SECRET, {
+        expiresIn: "1h",
       });
-      console.log(token);
       res.send({ token });
     });
 
@@ -78,14 +77,14 @@ async function run() {
           email: req.query.email,
         };
       }
-      const cursor = reviewCollection.find(query);
+      const cursor = reviewCollection.find(query).sort({ time: -1 });
       const reviews = await cursor.toArray();
       res.send(reviews);
     });
 
     app.get("/reviews", async (req, res) => {
       const query = {};
-      const cursor = reviewCollection.find(query);
+      const cursor = reviewCollection.find(query).sort({ time: -1 });
       const reviews = await cursor.toArray();
       res.send(reviews);
     });
@@ -108,6 +107,31 @@ async function run() {
     app.post("/service", async (req, res) => {
       const service = req.body;
       const result = await serviceCollection.insertOne(service);
+      res.send(result);
+    });
+
+    app.get("/update/:id", async (req, res) => {
+      const id = req.params.id;
+      const query = { _id: ObjectId(id) };
+      const review = await reviewCollection.findOne(query);
+      res.send(review);
+    });
+
+    app.patch("/updateReview/:id", async (req, res) => {
+      const id = req.params.id;
+      const filter = { _id: ObjectId(id) };
+      const newReview = req.body;
+      const option = { upsert: true };
+      const updateText = {
+        $set: {
+          comment: newReview.text,
+        },
+      };
+      const result = await reviewCollection.updateOne(
+        filter,
+        updateText,
+        option
+      );
       res.send(result);
     });
 

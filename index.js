@@ -2,7 +2,7 @@ const express = require("express");
 const { MongoClient, ServerApiVersion, ObjectId } = require("mongodb");
 const cors = require("cors");
 const { query } = require("express");
-// const jwt = require("jsonwebtoken");
+const jwt = require("jsonwebtoken");
 const app = express();
 const port = process.env.PORT || 5000;
 require("dotenv").config();
@@ -22,6 +22,20 @@ async function run() {
   try {
     const serviceCollection = client.db("tutorPro").collection("services");
     const reviewCollection = client.db("tutorPro").collection("reviews");
+
+   
+
+
+    // For get token
+    app.post("/jwt", (req, res) => {
+      const user = req.body;
+      const token = jwt.sign(user, process.env.DB_TOKEN_SECRET, {
+        expiresIn: "1d",
+      });
+      console.log(token);
+      res.send({ token });
+    });
+
     // get all data get
     app.get("/services", async (req, res) => {
       const query = {};
@@ -37,7 +51,11 @@ async function run() {
       res.send(services);
     });
     // for review data get
-    app.get("/MyReviews", async (req, res) => {
+    app.get("/MyReviews", verifyJWT, async (req, res) => {
+      const decoded = req.decoded;
+      if (decoded.email !== req.query.email) {
+        return res.status(403).send({ message: "unauthorized " });
+      }
       let query = {};
       if (req.query.email) {
         query = {

@@ -23,7 +23,23 @@ async function run() {
     const serviceCollection = client.db("tutorPro").collection("services");
     const reviewCollection = client.db("tutorPro").collection("reviews");
 
-   
+    function verifyJWT (req, res, next){
+      const authHeader = req.headers.authorization;
+      if (!authHeader) {
+        return res
+          .status(401)
+          .send({ message: "unauthorized access " });
+      }
+      const token = authHeader.split(" ")[1];
+      jwt.verify(token, process.env.DB_TOKEN_SECRET, function(err, decoded){
+        if (err) {
+          return res.status(403).send({ message: "forbidden access" });
+        }
+        req.decoded = decoded
+        next()
+      })
+    
+    }
 
 
     // For get token
